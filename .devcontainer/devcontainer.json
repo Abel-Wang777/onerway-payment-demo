@@ -1,6 +1,13 @@
 {
     "name": "Onerway Payment Demo",
-    "image": "mcr.microsoft.com/devcontainers/java:17",
+    "image": "mcr.microsoft.com/devcontainers/java:21",
+    "features": {
+        "ghcr.io/devcontainers/features/maven:1": {
+            "version": "none",
+            "installMaven": "true",
+            "mavenVersion": "3.9.6"
+        }
+    },
     "postCreateCommand": "mvn clean install -DskipTests",
     "customizations": {
         "vscode": {
@@ -9,8 +16,15 @@
                 "redhat.vscode-yaml"
             ],
             "settings": {
-                "java.server.launchMode": "Standard"
+                "java.server.launchMode": "Standard",
+                "java.configuration.updateBuildConfiguration": "automatic"
             }
+        }
+    },
+    "portsAttributes": {
+        "8080": {
+            "label": "Onerway Payment Demo App",
+            "onAutoForward": "notify"
         }
     },
     "forwardPorts": [
