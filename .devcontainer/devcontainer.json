@@ -5,7 +5,6 @@
         "ghcr.io/devcontainers/features/maven:1": {
             "version": "none",
             "installMaven": "true",
-            "mavenVersion": "3.9.6"
         }
     },
     "postCreateCommand": "mvn clean install -DskipTests",
