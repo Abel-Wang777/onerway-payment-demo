@@ -108,8 +108,7 @@ onerway-payment-demo/
 
 ## 📚 Additional Resources
 
-- [Onerway Payment Gateway Documentation](https://docs.onerway.com) (if available)
-- For detailed architecture and signature algorithm, see [CLAUDE.md](CLAUDE.md)
+- [Onerway Payment Gateway Documentation](https://docs.onerway.com/apis/en/)
 
 ## 🔒 Security Notes
 
@@ -220,7 +219,7 @@ onerway-payment-demo/
 
 ## 📚 其他资源
 
-- [Onerway 支付网关文档](https://docs.onerway.com)（如果可用）
+- [Onerway 支付网关文档](https://docs.onerway.com/apis/zh/)
 
 ## 🔒 安全注意事项
 
