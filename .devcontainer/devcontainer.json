@@ -1,0 +1,14 @@
+{
+    "name": "Onerway Payment Demo",
+    "image": "mcr.microsoft.com/devcontainers/java:17",
+    "postCreateCommand": "mvn clean install -DskipTests",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "vscjava.vscode-java-pack",
+                "redhat.vscode-yaml"
+            ]
+        }
+    },
+    "forwardPorts": [8080]
+}
