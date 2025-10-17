@@ -7,8 +7,13 @@
             "extensions": [
                 "vscjava.vscode-java-pack",
                 "redhat.vscode-yaml"
-            ]
+            ],
+            "settings": {
+                "java.server.launchMode": "Standard"
+            }
         }
     },
-    "forwardPorts": [8080]
+    "forwardPorts": [
+        8080
+    ]
 }
