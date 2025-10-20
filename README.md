@@ -18,7 +18,7 @@ A demo project showcasing how to integrate the Onerway payment gateway using Jav
 
 ### Option 1: Run in GitHub Codespaces (Recommended)
 
-1. Click the [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/onerway/onerway-payment-demo-java?quickstart=1)
+1. [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/onerway/onerway-payment-demo-java?quickstart=1)
 2. Wait for the environment to initialize (~1 minute)
 3. The devcontainer will automatically run `mvn clean install -DskipTests`
 4. Configure your credentials (see Configuration section below)
@@ -129,7 +129,7 @@ onerway-payment-demo/
 
 ### 方式一：在 GitHub Codespaces 中运行（推荐）
 
-1. 点击[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/onerway/onerway-payment-demo-java?quickstart=1)
+1. [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/onerway/onerway-payment-demo-java?quickstart=1)
 2. 等待环境初始化（约 1 分钟）
 3. devcontainer 会自动运行 `mvn clean install -DskipTests`
 4. 配置你的凭证（参见下方配置章节）
