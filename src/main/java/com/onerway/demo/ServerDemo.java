@@ -1,4 +1,5 @@
 package com.onerway.demo;
+
 import static spark.Spark.*;
 
 import java.io.IOException;
@@ -38,7 +39,92 @@ public class ServerDemo {
 
     public static void main(String[] args) {
         port(8080);
+        get("/", ServerDemo::handleHomePage);
         get("/create-checkout-session", ServerDemo::handlePaymentRequest);
+    }
+
+    private static Object handleHomePage(Request req, Response res) {
+        res.type("text/html; charset=utf-8");
+        return """
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Payment Demo</title>
+                    <style>
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 100vh;
+                            background: #f5f5f7;
+                        }
+                        .container {
+                            background: white;
+                            padding: 4rem 3rem;
+                            border-radius: 16px;
+                            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+                            text-align: center;
+                            max-width: 400px;
+                            width: 90%;
+                        }
+                        h1 {
+                            color: #1d1d1f;
+                            margin-bottom: 0.5rem;
+                            font-size: 2.5rem;
+                            font-weight: 600;
+                            letter-spacing: -0.5px;
+                        }
+                        .price {
+                            font-size: 3rem;
+                            color: #1d1d1f;
+                            font-weight: 700;
+                            margin: 2.5rem 0;
+                        }
+                        .buy-button {
+                            background: #0071e3;
+                            color: white;
+                            border: none;
+                            padding: 1rem 2.5rem;
+                            font-size: 1rem;
+                            font-weight: 500;
+                            border-radius: 980px;
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                            text-decoration: none;
+                            display: inline-block;
+                        }
+                        .buy-button:hover {
+                            background: #0077ed;
+                            transform: scale(1.02);
+                        }
+                        .buy-button:active {
+                            transform: scale(0.98);
+                        }
+                        .subtitle {
+                            color: #86868b;
+                            font-size: 1.1rem;
+                            margin-bottom: 0.5rem;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>Premium Gadget</h1>
+                        <p class="subtitle">Latest model</p>
+                        <div class="price">$110</div>
+                        <a href="/create-checkout-session" class="buy-button">Buy Now</a>
+                    </div>
+                </body>
+                </html>
+                """;
     }
 
     private static Object handlePaymentRequest(Request req, Response res) {
@@ -108,7 +194,7 @@ public class ServerDemo {
         Map<String, String> product = new TreeMap<>();
         product.put("price", "110.00");
         product.put("num", "1");
-        product.put("name", "iphone11");
+        product.put("name", "Premium Gadget");
         product.put("currency", "USD");
         products.add(product);
 
