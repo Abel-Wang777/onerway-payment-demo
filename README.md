@@ -24,7 +24,7 @@ A demo project showcasing how to integrate the Onerway payment gateway using Jav
 4. Configure your credentials (see Configuration section below)
 5. Run: `mvn exec:java`
 6. Open the forwarded port 8080 in your browser
-7. Navigate to `/create-checkout-session` to test the payment flow
+7. Visit the homepage at `/` to see the product page and test payment options
 
 ### Option 2: Run Locally
 
@@ -52,8 +52,9 @@ A demo project showcasing how to integrate the Onerway payment gateway using Jav
    ```
 
 6. **Test the integration**:
-   - Open your browser to `http://localhost:8080/create-checkout-session`
-   - You should be redirected to the Onerway payment page
+   - Open your browser to `http://localhost:8080/`
+   - Click "Checkout" button to test the redirect payment flow
+   - Or click "Payment Intent" button to test the SDK integration flow
 
 ## 📝 Configuration
 
@@ -61,11 +62,11 @@ Before running the application, you **must** update the following credentials in
 
 | Line | Variable | Description | Example |
 |------|----------|-------------|---------|
-| 31 | `MERCHANT_NO` | Your merchant number from Onerway | `"M123456789"` |
-| 32 | `DEFAULT_APP_ID` | Your application ID from Onerway | `"APP_ABC123"` |
-| 33 | `MERCHANT_SECRET` | Your merchant secret key (for signature generation) | `"your-secret-key"` |
-| 34 | `DEFAULT_RETURN_URL` | URL where customers return after payment | `"https://yourdomain.com/payment/return"` |
-| 35 | `DEFAULT_NOTIFY_URL` | Webhook URL for async payment notifications | `"https://yourdomain.com/payment/notify"` |
+| 39 | `MERCHANT_NO` | Your merchant number from Onerway | `"M123456789"` |
+| 40 | `DEFAULT_APP_ID` | Your application ID from Onerway | `"APP_ABC123"` |
+| 41 | `MERCHANT_SECRET` | Your merchant secret key (for signature generation) | `"your-secret-key"` |
+| 42 | `DEFAULT_RETURN_URL` | URL where customers return after payment | `"http://localhost:8080/success.html"` |
+| 43 | `DEFAULT_NOTIFY_URL` | Webhook URL for async payment notifications | `"https://merchant.example.com/pay/notify"` |
 
 > **Note**: The application uses the Onerway sandbox environment by default: `https://sandbox-acq.onerway.com/txn/payment`
 
@@ -73,19 +74,28 @@ Before running the application, you **must** update the following credentials in
 
 ```
 onerway-payment-demo/
-├── src/main/java/com/onerway/demo/
-│   └── ServerDemo.java          # Main application with payment integration logic
-├── pom.xml                       # Maven configuration
-└── .devcontainer/                # GitHub Codespaces configuration
+├── src/main/
+│   ├── java/com/onerway/demo/
+│   │   └── ServerDemo.java          # Payment integration logic (~400 lines)
+│   └── resources/public/
+│       ├── index.html               # Product page with payment buttons
+│       └── success.html             # Payment success page
+├── pom.xml                          # Maven configuration
+└── .devcontainer/                   # GitHub Codespaces configuration
     └── devcontainer.json
 ```
 
+**Note**: HTML pages are separated from Java code for better maintainability. The `ServerDemo.java` file focuses purely on payment business logic.
+
 ## 🔑 Key Features
 
+- **Two Payment Flows**:
+  - **Checkout Session**: Direct redirect to Onerway payment page
+  - **Payment Intent**: SDK integration with transaction ID tracking
+- **Clean Architecture**: Separated frontend (HTML) and backend (Java) code
 - **Payment Request Building**: Constructs payment requests with billing information and transaction details
 - **Signature Generation**: Implements Onerway's SHA-256 signature algorithm for request authentication
 - **API Communication**: Uses Java's HttpClient to communicate with Onerway's API
-- **Automatic Redirect**: Extracts and redirects customers to the Onerway payment page
 
 ## 🛠️ Development
 
@@ -99,12 +109,19 @@ onerway-payment-demo/
 ### Testing the Payment Flow
 
 1. Start the server: `mvn exec:java`
-2. Access: `http://localhost:8080/create-checkout-session`
-3. The server will:
-   - Generate a payment request with demo data
-   - Sign the request using your merchant secret
-   - Call the Onerway API
-   - Redirect you to the payment page
+2. Open browser: `http://localhost:8080/`
+3. Test available payment options:
+   
+   **Option A - Checkout (Redirect Flow)**:
+   - Click the "Checkout" button
+   - Server generates signed payment request
+   - Browser redirects directly to Onerway payment page
+   
+   **Option B - Payment Intent (SDK Flow)**:
+   - Click the "Payment Intent" button
+   - Server creates payment intent and returns transaction ID
+   - Frontend displays transaction details and SDK redirect URL
+   - Use the URL to integrate with Onerway SDK
 
 ## 📚 Additional Resources
 
@@ -135,7 +152,7 @@ onerway-payment-demo/
 4. 配置你的凭证（参见下方配置章节）
 5. 运行：`mvn exec:java`
 6. 在浏览器中打开转发的 8080 端口
-7. 访问 `/create-checkout-session` 测试支付流程
+7. 访问首页 `/` 查看产品页面并测试支付选项
 
 ### 方式二：本地运行
 
@@ -163,8 +180,9 @@ onerway-payment-demo/
    ```
 
 6. **测试集成**：
-   - 在浏览器中打开 `http://localhost:8080/create-checkout-session`
-   - 你将被重定向到 Onerway 支付页面
+   - 在浏览器中打开 `http://localhost:8080/`
+   - 点击 "Checkout" 按钮测试重定向支付流程
+   - 或点击 "Payment Intent" 按钮测试 SDK 集成流程
 
 ## 📝 配置
 
@@ -172,11 +190,11 @@ onerway-payment-demo/
 
 | 行号 | 变量 | 描述 | 示例 |
 |------|------|------|------|
-| 31 | `MERCHANT_NO` | 你从 Onerway 获取的商户号 | `"M123456789"` |
-| 32 | `DEFAULT_APP_ID` | 你从 Onerway 获取的应用 ID | `"APP_ABC123"` |
-| 33 | `MERCHANT_SECRET` | 你的商户密钥（用于签名生成） | `"your-secret-key"` |
-| 34 | `DEFAULT_RETURN_URL` | 支付完成后客户返回的 URL | `"https://yourdomain.com/payment/return"` |
-| 35 | `DEFAULT_NOTIFY_URL` | 接收异步支付通知的 Webhook URL | `"https://yourdomain.com/payment/notify"` |
+| 39 | `MERCHANT_NO` | 你从 Onerway 获取的商户号 | `"M123456789"` |
+| 40 | `DEFAULT_APP_ID` | 你从 Onerway 获取的应用 ID | `"APP_ABC123"` |
+| 41 | `MERCHANT_SECRET` | 你的商户密钥（用于签名生成） | `"your-secret-key"` |
+| 42 | `DEFAULT_RETURN_URL` | 支付完成后客户返回的 URL | `"http://localhost:8080/success.html"` |
+| 43 | `DEFAULT_NOTIFY_URL` | 接收异步支付通知的 Webhook URL | `"https://merchant.example.com/pay/notify"` |
 
 > **注意**：应用默认使用 Onerway 沙箱环境：`https://sandbox-acq.onerway.com/txn/payment`
 
@@ -184,19 +202,28 @@ onerway-payment-demo/
 
 ```
 onerway-payment-demo/
-├── src/main/java/com/onerway/demo/
-│   └── ServerDemo.java          # 包含支付集成逻辑的主应用程序
-├── pom.xml                       # Maven 配置
-└── .devcontainer/                # GitHub Codespaces 配置
+├── src/main/
+│   ├── java/com/onerway/demo/
+│   │   └── ServerDemo.java          # 支付集成逻辑（约 400 行）
+│   └── resources/public/
+│       ├── index.html               # 产品展示页面（含支付按钮）
+│       └── success.html             # 支付成功页面
+├── pom.xml                          # Maven 配置
+└── .devcontainer/                   # GitHub Codespaces 配置
     └── devcontainer.json
 ```
 
+**注意**：HTML 页面与 Java 代码分离，便于维护。`ServerDemo.java` 文件专注于支付业务逻辑。
+
 ## 🔑 核心功能
 
+- **两种支付流程**：
+  - **Checkout Session**：直接重定向到 Onerway 支付页面
+  - **Payment Intent**：SDK 集成，支持交易 ID 追踪
+- **清晰架构**：前端（HTML）与后端（Java）代码分离
 - **支付请求构建**：构造包含账单信息和交易详情的支付请求
 - **签名生成**：实现 Onerway 的 SHA-256 签名算法以进行请求认证
 - **API 通信**：使用 Java 的 HttpClient 与 Onerway API 通信
-- **自动重定向**：提取并重定向客户到 Onerway 支付页面
 
 ## 🛠️ 开发
 
@@ -210,12 +237,19 @@ onerway-payment-demo/
 ### 测试支付流程
 
 1. 启动服务器：`mvn exec:java`
-2. 访问：`http://localhost:8080/create-checkout-session`
-3. 服务器将：
-   - 使用演示数据生成支付请求
-   - 使用你的商户密钥对请求进行签名
-   - 调用 Onerway API
-   - 将你重定向到支付页面
+2. 打开浏览器：`http://localhost:8080/`
+3. 测试可用的支付选项：
+   
+   **选项 A - Checkout（重定向流程）**：
+   - 点击 "Checkout" 按钮
+   - 服务器生成签名的支付请求
+   - 浏览器直接重定向到 Onerway 支付页面
+   
+   **选项 B - Payment Intent（SDK 流程）**：
+   - 点击 "Payment Intent" 按钮
+   - 服务器创建支付意图并返回交易 ID
+   - 前端显示交易详情和 SDK 重定向 URL
+   - 使用该 URL 与 Onerway SDK 集成
 
 ## 📚 其他资源
 
