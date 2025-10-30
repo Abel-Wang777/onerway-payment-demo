@@ -3,6 +3,7 @@ package com.onerway.demo;
 import static spark.Spark.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -23,111 +24,71 @@ import spark.Request;
 import spark.Response;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-// ... other imports
 
 public class ServerDemo {
+    // ========================================
+    // Configuration Constants
+    // ========================================
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final String SANDBOX_BASE_URL = "https://sandbox-acq.onerway.com/txn/payment";
-    // TODO: Replace with your merchant no, app id, and merchant secret
+    private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private static final String CHECKOUT_SESSION_URL = "https://sandbox-acq.onerway.com/txn/payment";
+    private static final String PAYMENT_INTENT_URL = "https://sandbox-acq.onerway.com/v1/sdkTxn/doTransaction";
+
+    // TODO: Replace with your merchant credentials
     private static final String MERCHANT_NO = "REPLACE_WITH_MERCHANT_NO";
     private static final String DEFAULT_APP_ID = "REPLACE_WITH_APP_ID";
     private static final String MERCHANT_SECRET = "REPLACE_WITH_MERCHANT_SECRET";
-    private static final String DEFAULT_RETURN_URL = "https://merchant.example.com/pay/return";
+    private static final String DEFAULT_RETURN_URL = "http://localhost:8080/success.html";
     private static final String DEFAULT_NOTIFY_URL = "https://merchant.example.com/pay/notify";
 
-    private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
+    // ========================================
+    // Application Entry Point
+    // ========================================
     public static void main(String[] args) {
         port(8080);
-        get("/", ServerDemo::handleHomePage);
-        get("/create-checkout-session", ServerDemo::handlePaymentRequest);
+
+        // HTML page routes
+        get("/", (req, res) -> serveStaticFile(res, "/public/index.html", "text/html; charset=utf-8"));
+        get("/index.html", (req, res) -> serveStaticFile(res, "/public/index.html", "text/html; charset=utf-8"));
+        get("/success.html", (req, res) -> serveStaticFile(res, "/public/success.html", "text/html; charset=utf-8"));
+
+        // API endpoints
+        get("/create-checkout-session", ServerDemo::handleCheckoutSession);
+        get("/create-payment-intent", ServerDemo::handlePaymentIntent);
     }
 
-    private static Object handleHomePage(Request req, Response res) {
-        res.type("text/html; charset=utf-8");
-        return """
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Payment Demo</title>
-                    <style>
-                        * {
-                            margin: 0;
-                            padding: 0;
-                            box-sizing: border-box;
-                        }
-                        body {
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            min-height: 100vh;
-                            background: #f5f5f7;
-                        }
-                        .container {
-                            background: white;
-                            padding: 4rem 3rem;
-                            border-radius: 16px;
-                            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-                            text-align: center;
-                            max-width: 400px;
-                            width: 90%;
-                        }
-                        h1 {
-                            color: #1d1d1f;
-                            margin-bottom: 0.5rem;
-                            font-size: 2.5rem;
-                            font-weight: 600;
-                            letter-spacing: -0.5px;
-                        }
-                        .price {
-                            font-size: 3rem;
-                            color: #1d1d1f;
-                            font-weight: 700;
-                            margin: 2.5rem 0;
-                        }
-                        .buy-button {
-                            background: #0071e3;
-                            color: white;
-                            border: none;
-                            padding: 1rem 2.5rem;
-                            font-size: 1rem;
-                            font-weight: 500;
-                            border-radius: 980px;
-                            cursor: pointer;
-                            transition: all 0.2s ease;
-                            text-decoration: none;
-                            display: inline-block;
-                        }
-                        .buy-button:hover {
-                            background: #0077ed;
-                            transform: scale(1.02);
-                        }
-                        .buy-button:active {
-                            transform: scale(0.98);
-                        }
-                        .subtitle {
-                            color: #86868b;
-                            font-size: 1.1rem;
-                            margin-bottom: 0.5rem;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <h1>Premium Gadget</h1>
-                        <p class="subtitle">Latest model</p>
-                        <div class="price">$110</div>
-                        <a href="/create-checkout-session" class="buy-button">Buy Now</a>
-                    </div>
-                </body>
-                </html>
-                """;
+    // ========================================
+    // Utility Methods for Static Files
+    // ========================================
+
+    /**
+     * Utility method to serve static files from classpath
+     */
+    private static Object serveStaticFile(Response res, String resourcePath, String contentType) {
+        try (InputStream is = ServerDemo.class.getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                res.status(404);
+                return "<html><body><h2>404 Not found</h2><p>Resource not found: " + resourcePath
+                        + "</p></body></html>";
+            }
+            res.type(contentType);
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            res.status(500);
+            return "<html><body><h2>500 Internal Server Error</h2><p>" + e.getMessage() + "</p></body></html>";
+        }
     }
 
-    private static Object handlePaymentRequest(Request req, Response res) {
+    // ========================================
+    // API Request Handlers
+    // ========================================
+
+    /**
+     * Create checkout session - initiates payment flow
+     * Returns redirect URL to frontend for client-side navigation
+     */
+    private static Object handleCheckoutSession(Request req, Response res) {
         res.type("application/json");
 
         // Build payment request data
@@ -141,22 +102,86 @@ public class ServerDemo {
         try {
             String requestJson = toJson(body);
 
-            // Send request to Onerway API
-            String responseJson = postJson(SANDBOX_BASE_URL, requestJson);
+            // Send request to Onerway Checkout API
+            String responseJson = postJson(CHECKOUT_SESSION_URL, requestJson);
 
-            // Extract redirect URL and redirect customer
+            // Extract redirect URL
             String redirectUrl = extractRedirectUrl(responseJson);
+
+            // Build response JSON
+            Map<String, Object> result = new TreeMap<>();
             if (redirectUrl != null) {
-                res.redirect(redirectUrl, 303);
-                return "";
+                result.put("success", true);
+                result.put("redirectUrl", redirectUrl);
+            } else {
+                result.put("success", false);
+                result.put("error", "Failed to extract redirect URL from response");
+                result.put("rawResponse", responseJson);
             }
 
-            return responseJson;
+            return toJson(result);
         } catch (Exception e) {
-            return "{\"error\": \"Failed to create checkout session: " + e.getMessage() + "\"}";
+            Map<String, Object> error = new TreeMap<>();
+            error.put("success", false);
+            error.put("error", "Failed to create checkout session: " + e.getMessage());
+            return toJson(error);
         }
     }
 
+    /**
+     * Create payment intent - initiates payment flow via SDK transaction endpoint
+     * Returns transaction ID and redirect URL to frontend for client-side
+     * navigation
+     */
+    private static Object handlePaymentIntent(Request req, Response res) {
+        res.type("application/json");
+
+        // Build payment request data
+        Map<String, String> body = buildPaymentBody(req);
+
+        // Generate signature
+        String signBase = buildSignBaseString(body, MERCHANT_SECRET);
+        String sign = sha256Hex(signBase);
+        body.put("sign", sign);
+
+        try {
+            String requestJson = toJson(body);
+
+            // Send request to Onerway Payment Intent API
+            String responseJson = postJson(PAYMENT_INTENT_URL, requestJson);
+
+            // Extract transaction ID and redirect URL
+            String transactionId = extractTransactionId(responseJson);
+            String redirectUrl = extractRedirectUrl(responseJson);
+
+            // Build response JSON
+            Map<String, Object> result = new TreeMap<>();
+            if (redirectUrl != null && transactionId != null) {
+                result.put("success", true);
+                result.put("transactionId", transactionId);
+                result.put("redirectUrl", redirectUrl);
+            } else {
+                result.put("success", false);
+                result.put("error", "Failed to extract transaction data from response");
+                result.put("rawResponse", responseJson);
+            }
+
+            return toJson(result);
+        } catch (Exception e) {
+            Map<String, Object> error = new TreeMap<>();
+            error.put("success", false);
+            error.put("error", "Failed to create payment intent: " + e.getMessage());
+            return toJson(error);
+        }
+    }
+
+    // ========================================
+    // Payment Request Building
+    // ========================================
+
+    /**
+     * Builds the complete payment request body
+     */
     private static Map<String, String> buildPaymentBody(Request req) {
         String merchantTxnId = String.valueOf(System.currentTimeMillis());
         String merchantTxnTime = LocalDateTime.now().format(DATETIME_FMT);
@@ -182,6 +207,9 @@ public class ServerDemo {
         return body;
     }
 
+    /**
+     * Builds billing information JSON
+     */
     private static String buildBillingInformation(String country, String email) {
         Map<String, Object> billing = new TreeMap<>();
         billing.put("country", country);
@@ -189,6 +217,9 @@ public class ServerDemo {
         return toJson(billing);
     }
 
+    /**
+     * Builds transaction order message with product details
+     */
     private static String buildTxnOrderMsg(String appId, String returnUrl, String notifyUrl, String transactionIp) {
         List<Map<String, String>> products = new ArrayList<>();
         Map<String, String> product = new TreeMap<>();
@@ -209,7 +240,16 @@ public class ServerDemo {
         return toJson(txnOrder);
     }
 
-    // Signature generation following Onerway's specification
+    // ========================================
+    // Signature Generation
+    // ========================================
+
+    /**
+     * Builds signature base string following Onerway's specification:
+     * - Parameters sorted alphabetically by key (via TreeMap)
+     * - Non-empty values concatenated (excluding specific keys)
+     * - Merchant secret appended
+     */
     private static String buildSignBaseString(Map<String, String> params, String secret) {
         boolean refundRequest = isRefundRequest(params);
         StringBuilder sb = new StringBuilder();
@@ -224,17 +264,36 @@ public class ServerDemo {
         return sb.toString();
     }
 
+    /**
+     * Generates SHA-256 hash in hexadecimal format
+     */
     private static String sha256Hex(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest); // JDK 17+
+            return HexFormat.of().formatHex(digest);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 not available", e);
         }
     }
 
-    // HTTP communication
+    /**
+     * Determines which keys should be excluded from signature calculation
+     */
+    private static boolean shouldFilterKey(String key, boolean refundRequest) {
+        Set<String> EXCLUDED_KEYS_BASE = Set.of(
+                "originMerchantTxnId", "customsDeclarationAmount", "customsDeclarationCurrency",
+                "paymentMethod", "walletTypeName", "periodValue", "tokenExpireTime", "sign");
+        return EXCLUDED_KEYS_BASE.contains(key) || (!refundRequest && "originTransactionId".equals(key));
+    }
+
+    // ========================================
+    // HTTP Communication
+    // ========================================
+
+    /**
+     * Sends JSON POST request to Onerway API
+     */
     private static String postJson(String url, String jsonBody) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
@@ -247,24 +306,65 @@ public class ServerDemo {
         return response.body();
     }
 
-    // Response parsing
-    private static String extractRedirectUrl(String responseJson) {
+    /**
+     * Extracts a string field from JSON response using a path
+     * 
+     * @param responseJson JSON string to parse
+     * @param path         Field path (e.g., "data.redirectUrl",
+     *                     "data.transactionId")
+     * @return Field value or null if not found
+     */
+    private static String extractJsonField(String responseJson, String path) {
         try {
-            JsonNode root = JSON.readTree(responseJson);
-            JsonNode redirectNode = root.path("data").path("redirectUrl");
-            if (redirectNode.isTextual()) {
-                String value = redirectNode.asText().trim();
+            JsonNode node = JSON.readTree(responseJson);
+
+            // Navigate through the path (e.g., "data.redirectUrl" -> ["data",
+            // "redirectUrl"])
+            String[] pathParts = path.split("\\.");
+            for (String part : pathParts) {
+                node = node.path(part);
+                if (node.isMissingNode()) {
+                    return null;
+                }
+            }
+
+            // Extract text value
+            if (node.isTextual()) {
+                String value = node.asText().trim();
                 if (isNonEmpty(value)) {
                     return value;
                 }
+            } else if (node.isNumber()) {
+                // Support number fields as well
+                return node.asText();
             }
         } catch (Exception e) {
-            System.err.println("Failed to parse redirect url: " + e.getMessage());
+            System.err.println("Failed to extract field '" + path + "': " + e.getMessage());
         }
         return null;
     }
 
-    // JSON utilities
+    /**
+     * Extracts redirect URL from Onerway API response
+     */
+    private static String extractRedirectUrl(String responseJson) {
+        return extractJsonField(responseJson, "data.redirectUrl");
+    }
+
+    /**
+     * Extracts transaction ID from Onerway API response
+     */
+    private static String extractTransactionId(String responseJson) {
+        return extractJsonField(responseJson, "data.transactionId");
+    }
+
+    // ========================================
+    // Utility Methods
+    // ========================================
+
+    /**
+     * Converts object to JSON string
+     */
     private static String toJson(Object obj) {
         try {
             return JSON.writeValueAsString(obj);
@@ -273,18 +373,9 @@ public class ServerDemo {
         }
     }
 
-    // Helper methods
-    private static boolean isRefundRequest(Map<String, String> params) {
-        return params != null && params.containsKey("refundType");
-    }
-
-    private static boolean shouldFilterKey(String key, boolean refundRequest) {
-        Set<String> EXCLUDED_KEYS_BASE = Set.of(
-                "originMerchantTxnId", "customsDeclarationAmount", "customsDeclarationCurrency",
-                "paymentMethod", "walletTypeName", "periodValue", "tokenExpireTime", "sign");
-        return EXCLUDED_KEYS_BASE.contains(key) || (!refundRequest && "originTransactionId".equals(key));
-    }
-
+    /**
+     * Resolves app ID from request parameters or headers
+     */
     private static String resolveAppId(Request req) {
         if (req == null)
             return DEFAULT_APP_ID;
@@ -300,10 +391,23 @@ public class ServerDemo {
         return DEFAULT_APP_ID;
     }
 
+    /**
+     * Resolves return URL based on app ID
+     */
     private static String resolveReturnUrl(String appId) {
         return DEFAULT_RETURN_URL;
     }
 
+    /**
+     * Checks if request is a refund request
+     */
+    private static boolean isRefundRequest(Map<String, String> params) {
+        return params != null && params.containsKey("refundType");
+    }
+
+    /**
+     * Checks if value is non-empty (handles null and "0" special case)
+     */
     private static boolean isNonEmpty(String value) {
         return value != null && (value.length() > 0 || "0".equals(value));
     }
